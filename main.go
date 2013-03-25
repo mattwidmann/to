@@ -9,6 +9,7 @@ import (
 	"sort"
 	"path/filepath"
 	"strings"
+	"strconv"
 )
 
 var dir_default = "/Users/matt/Documents"
@@ -17,7 +18,7 @@ var dir_desc = "directory to store list"
 var name_default = "to.txt"
 var name_desc = "name of list"
 
-var remove_desc = "prefix of item to remove"
+var remove_desc = "number of item to remove"
 
 var to_dir = flag.String("d", dir_default, dir_desc)
 var to_name = flag.String("n", name_default, name_desc)
@@ -40,15 +41,10 @@ func main() {
 
 	if len(*should_remove) != 0 {
 		// find item with prefix
-		to_remove := sort.Search(len(lines), func(i int) bool { return lines[i] >= *should_remove || strings.HasPrefix(lines[i], *should_remove) })
-		// prefix wasn't found or "found item" doesn't have prefix
-		if to_remove == len(lines) || !(strings.HasPrefix(lines[to_remove], *should_remove)) {
-			fmt.Println("ERROR: no item with that prefix")
-			os.Exit(1)
-		// multiple items have prefix
-		} else if to_remove + 1 < len(lines) && strings.HasPrefix(lines[to_remove + 1], *should_remove) {
-			fmt.Println("ERROR: more than one item with that prefix")
-			os.Exit(1)
+		var to_remove int
+		if to_remove, err = strconv.Atoi(*should_remove); err != nil {
+			fmt.Print(err)
+			return
 		}
 
 		// remove element at to_remove
@@ -63,8 +59,8 @@ func main() {
 
 	// just print the lines
 	if len(flag.Args()) == 0 {
-		for _, line := range lines {
-			fmt.Println("-", line)
+		for i, line := range lines {
+			fmt.Println(i, "-", line)
 		}
 		return
 	}
