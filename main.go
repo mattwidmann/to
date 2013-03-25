@@ -35,7 +35,7 @@ func main() {
 		err error
 	)
 	if lines, err = read_lines(to_path); err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		return
 	}
 
@@ -43,7 +43,7 @@ func main() {
 		// find item with prefix
 		var to_remove int
 		if to_remove, err = strconv.Atoi(*should_remove); err != nil {
-			fmt.Print(err)
+			fmt.Println(err)
 			return
 		}
 
@@ -51,7 +51,7 @@ func main() {
 		copy(lines[to_remove:], lines[(to_remove + 1):len(lines)])
 		lines = lines[:len(lines) - 1]
 		if err = write_lines(to_path, lines); err != nil {
-			fmt.Print(err)
+			fmt.Println(err)
 			return
 		}
 		return
@@ -70,7 +70,7 @@ func main() {
 	lines = append(lines, to)
 	sort.Strings(lines)
 	if err = write_lines(to_path, lines); err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		return
 	}
 	return
