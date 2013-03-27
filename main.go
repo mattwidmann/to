@@ -60,7 +60,7 @@ func main() {
 	// just print the lines
 	if len(flag.Args()) == 0 {
 		width := 1
-		if len(lines) > 9 {
+		if len(lines) > 10 {
 			width = 2
 		}
 		var format = fmt.Sprintf("%%%dd - %%s\n", width)
