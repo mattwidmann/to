@@ -1,29 +1,33 @@
 to
 ==
 
-- can't remove item that is a prefix of another item
+`to` is a command-line utility for managing a to do list.  By default, the file's name is `to.txt` and it's stored in `~/Documents/`.  To do list items are separated by newlines and are sorted alphabetically.
 
-License
+Without any arguments, `to` displays the items in a to do list along with their line numbers (used to remove the items from a list).
+
+With unrecognized arguments, `to` creates a new to do item in the default list by concatenating its arguments into one item, joined by spaces.
+
+The `-r` argument followed by a valid integer will remove the to do item with that number from the to do list.
+
+The `-d` and `-n` arguments take a path to a directory and filename, respectively.  These change which to do list file the other actions modify or display.
+
+Example
 -------
 
-The MIT License (MIT)
+	$ # to do lists start out empty
+	$ ./to
+	$ ./to This is a new to do list item.
+	$ ./to
+	> 0 - This is a new to do list item.
+	$ ./to This is another to do list item.
+	$ ./to
+	> 0 - This is a new to do list item.
+	> 1 - This is another to do list item.
+	$ ./to -r 0
+	$ ./to
+	> 0 - This is a new to do list item.
 
-Copyright (c) 2013 Matt Widmann
+Caveats
+-------
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+Line numbers will shift downwards or upwards when an item is removed or added.  Line numbers, therefore, are relative identifiers and will change if the list is modified.
