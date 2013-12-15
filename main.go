@@ -1,130 +1,133 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
+	"bufio"
 	"io"
 	"sort"
 	"path/filepath"
 	"strings"
-	"strconv"
 )
 
-var dir_default = "/Users/matt/Documents"
-var dir_desc = "directory to store list"
-
-var name_default = "to.txt"
-var name_desc = "name of list"
-
-var remove_desc = "number of item to remove"
-
-var to_dir = flag.String("d", dir_default, dir_desc)
-var to_name = flag.String("n", name_default, name_desc)
-var should_remove = flag.String("r", "", name_desc)
-// print path option
-
 func main() {
-	flag.Parse()
-
-	to_path := filepath.Join(*to_dir, *to_name)
+	// parse command line flags
 
 	var (
-		lines []string
-		err error
+		listDir string
+		listName string
+		removeItem int
 	)
-	if lines, err = read_lines(to_path); err != nil {
+
+	flag.StringVar(&listDir, "d", "~/Documents", "directory of list")
+	flag.StringVar(&listName, "n", "to.txt", "filename of list")
+	flag.IntVar(&removeItem, "r", -1, "item to be removed")
+	flag.Parse()
+
+	// sanitize path to list
+
+	tildeAt := strings.Index(listDir, "~")
+	if tildeAt != -1 {
+		homeDir := os.Getenv("HOME")
+		if len(homeDir) == 0 {
+			panic("can't determine home directory")
+		}
+		listDir = strings.Replace(listDir, "~", homeDir, 1)
+	}
+
+	listDir, err := filepath.Abs(listDir)
+	if err != nil {
+		panic(err)
+	}
+	if _, err := os.Stat(listDir); os.IsNotExist(err) {
+		panic(err)
+	}
+
+	listPath := filepath.Join(listDir, listName)
+
+	// get items from list
+
+	lines, err := ReadLines(listPath)
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	if len(*should_remove) != 0 {
-		// find item with prefix
-		var to_remove int
-		if to_remove, err = strconv.Atoi(*should_remove); err != nil {
-			fmt.Println(err)
-			return
+	switch {
+	case removeItem >= 0:
+		// remove item at removeItem
+		if removeItem >= len(lines) {
+			panic("item to remove doesn't exist")
 		}
-
-		// remove element at to_remove
-		copy(lines[to_remove:], lines[(to_remove + 1):len(lines)])
+		lines[removeItem] = lines[len(lines) - 1]
 		lines = lines[:len(lines) - 1]
-		if err = write_lines(to_path, lines); err != nil {
-			fmt.Println(err)
-			return
+		sort.Strings(lines)
+		err = WriteLines(listPath, lines)
+		if err != nil {
+			panic(err)
 		}
-		return
-	}
-
-	// just print the lines
-	if len(flag.Args()) == 0 {
+	case flag.NArg() == 0:
+		// display item list
 		width := 1
 		if len(lines) > 10 {
 			width = 2
 		}
 		var format = fmt.Sprintf("%%%dd - %%s\n", width)
-		for i, line := range lines {
+		for i, line := range lines{
 			fmt.Printf(format, i, line)
 		}
-		return
+	default:
+		// join rest of arguments as item to add
+		to := strings.Join(flag.Args(), " ")
+		lines = append(lines, to)
+		sort.Strings(lines)
+		if err := WriteLines(listPath, lines); err != nil {
+			panic(err)
+		}
 	}
 
-	// join rest of arguments as item to add
-	to := strings.Join(flag.Args(), " ")
-	lines = append(lines, to)
-	sort.Strings(lines)
-	if err = write_lines(to_path, lines); err != nil {
-		fmt.Println(err)
-		return
-	}
 	return
 }
 
-// returns all lines in file at path (even blank ones)
-func read_lines(path string) (lines []string, err error) {
-	var (
-		file *os.File
-		line string
-	)
-	// open file for reading
-	if file, err = os.Open(path); err != nil {
-		return
+func ReadLines(path string) (lines []string, err error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
 	}
-	defer file.Close()
-	// start reading from file
-	reader := bufio.NewReader(file)
+	defer f.Close()
+
+	// read lines from buffered reader
+	reader := bufio.NewReader(f)
 	for {
-		if line, err = reader.ReadString('\n'); err != nil {
+		line, err := reader.ReadString('\n')
+		if err != nil {
 			break
 		}
-		// don't include newline
 		line = strings.TrimRight(line, "\n")
-		// skip blank lines
 		if len(line) != 0 {
-			lines = append(lines, strings.TrimRight(line, "\n"))
+			lines = append(lines, line)
 		}
 	}
-	// don't report an end of file error
+
+	// suppress EOF error
 	if err == io.EOF {
 		err = nil
 	}
+
 	return
 }
 
-func write_lines(path string, lines []string) (err error) {
-	var (
-		file *os.File
-	)
-	// open file for writing
-	if file, err = os.Create(path); err != nil {
+func WriteLines(path string, lines []string) (err error) {
+	f, err := os.Create(path)
+	if err != nil {
 		return
 	}
-	defer file.Close()
+	defer f.Close()
 
 	// write each line to file
 	for _, line := range lines {
-		_, err = file.WriteString(line + "\n");
+		_, err = f.WriteString(line + "\n");
 		if err != nil {
 			return
 		}
